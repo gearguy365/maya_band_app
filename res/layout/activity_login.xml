@@ -65,6 +65,7 @@
         android:onClick="onClickSignUp"/>
 
     <TextView 
+        android:text="result appears here"
         android:layout_height="50dp"
         android:layout_width="fill_parent"
         android:id="@+id/log"/>

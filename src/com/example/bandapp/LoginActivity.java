@@ -1,22 +1,24 @@
 package com.example.bandapp;
 
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class LoginActivity extends Activity {
 	ProgressBar loading;
-	
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -24,82 +26,76 @@ public class LoginActivity extends Activity {
 		loading = (ProgressBar)findViewById(R.id.progressBar1);
 		loading.setVisibility(View.INVISIBLE);
 	}
-	
+
 	public void onClickLogin(View v) {
 		EditText email_view = (EditText)findViewById(R.id.login_username);
 		String email = email_view.getText().toString();
 		EditText password_view = (EditText)findViewById(R.id.login_password);
 		String password = password_view.getText().toString();
 		String uri = "http://54.169.52.143/maya-tests-api/login";
-		attemptLogin(uri, email, password);
-		
-		
+		MyTask task = new MyTask();
+		task.execute(uri, email, password);
 	}
-	
+
+	public void onClickSignUp(View v) {
+		Intent i = new Intent(this, SignupActivity.class);
+		startActivity(i);
+	}
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Handle action bar item clicks here. The action bar will
-		// automatically handle clicks on the Home/Up button, so long
-		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	
 
-	private void attemptLogin(String uri, String email, String password) {
-		
-		RequestPackage p = new RequestPackage();
-		p.setMethod("POST");
-		p.setUri(uri);
-		p.setParam("email", email);
-		p.setParam("password", password);
-		
-		MyTask task = new MyTask();
-		task.execute(p);
-	}
-	
-	private class MyTask extends AsyncTask<RequestPackage, String, String> {
+	private class MyTask extends AsyncTask <String, String, String> {
 
 		@Override
 		protected void onPreExecute() {
 			loading.setVisibility(View.VISIBLE);
 		}
-		
+
 		@Override
-		protected String doInBackground(RequestPackage... params) {
-			String content = HttpManager.getData(params[0]);
-			return content;
+		protected String doInBackground(String... params) {
+			String response = ConnectionManager.loginAttempt(params[0], params[1], params[2]);
+			return response;
 		}
-		
+
 		@Override
 		protected void onPostExecute(String result) {
-			/*
+			Log.i("response", "the response is: "+result);
+			loading.setVisibility(View.INVISIBLE);
+			String status = "";
+			String data = "";
+			JSONObject object = null;
 			try {
-				JSONObject reader = new JSONObject(result);
-				if(reader.getString("status").equals("success")) {
-					Toast.makeText(getApplicationContext(), "the attempt seems to be successful!", Toast.LENGTH_SHORT).show();
-				}
-				else {
-					Toast.makeText(getApplicationContext(), "this is invalid", Toast.LENGTH_SHORT).show();
-				}
+				object = new JSONObject(result);
+				status = object.getString("status");
+				data = object.getString("data");
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
-			*/
-			TextView log = (TextView)findViewById(R.id.log);
-			log.setText(result);
-			
-		}
-		
+			if (status.equals("success")) {
+				Toast.makeText(getApplicationContext(), "Login Successful!", Toast.LENGTH_SHORT).show();
+
+				Log.i("data_reply",data);
+
+				Intent i = new Intent(getApplicationContext(), DashboardActivity.class);
+				i.putExtra("user_deatils", data);
+				startActivity(i);
+			}
+			else {
+				Toast.makeText(getApplicationContext(), "Login Unsuccessful!", Toast.LENGTH_SHORT).show();
+			}
+		}	
 	}
 }
